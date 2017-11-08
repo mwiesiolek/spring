@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 @Slf4j
 public class MainClass {
@@ -18,8 +19,11 @@ public class MainClass {
 
     public static void main(String[] args) throws IOException {
 
-        // sendMessage();
-         receiveMessage();
+        for (String arg : args) {
+            sendMessage(arg);
+        }
+
+       //  receiveMessage();
     }
 
     private static void receiveMessage() throws IOException {
@@ -37,13 +41,47 @@ public class MainClass {
                 public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
                     String message = new String(body, "utf-8");
                     log.info("Message received: {}", message);
+
+                    for (char ch : message.toCharArray()) {
+                        if (ch == '.') {
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                log.error("InterruptedException", e);
+                            }
+                        }
+                    }
                 }
             };
 
             channel.basicConsume(QUEUE_NAME, true, consumer);
 
+        } finally {
+            log.info("Started");
+/*            if (channel != null) {
+                channel.close();
+            }
+
+            if (connection != null) {
+                connection.close();
+            }*/
+        }
+    }
+
+    private static void sendMessage(String arg) throws IOException {
+        Connection connection = null;
+        Channel channel = null;
+        try {
+            ConnectionFactory factory = new ConnectionFactory();
+            factory.setHost("localhost");
+            connection = factory.newConnection();
+            channel = connection.createChannel();
+
+            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+            channel.basicPublish("", QUEUE_NAME, null, getMessage(arg).getBytes(Charset.forName("utf-8")));
+
             log.info("Done");
-        }finally {
+        } finally {
             if (channel != null) {
                 channel.close();
             }
@@ -54,27 +92,15 @@ public class MainClass {
         }
     }
 
-    private static void sendMessage() throws IOException {
-        Connection connection = null;
-        Channel channel = null;
-        try {
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost("localhost");
-            connection = factory.newConnection();
-            channel = connection.createChannel();
+    private static String getMessage(String arg) {
 
-            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
-            channel.basicPublish("", QUEUE_NAME, null, "Hello World!".getBytes(Charset.forName("utf-8")));
-
-            log.info("Done");
-        }finally {
-            if (channel != null) {
-                channel.close();
-            }
-
-            if (connection != null) {
-                connection.close();
+        int count = 0;
+        for (char c : arg.toCharArray()) {
+            if (c == '.') {
+                count++;
             }
         }
+
+        return String.format("[%s] %s", count, arg);
     }
 }

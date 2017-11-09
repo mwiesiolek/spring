@@ -17,6 +17,7 @@ import java.nio.charset.Charset;
 public class MainClass {
     private final static String QUEUE_NAME = "message-queue";
     public static final boolean DURABLE = true;
+    public static final String EXCHANGE = "logs";
 
     public static void main(String[] args) throws IOException {
 
@@ -59,18 +60,6 @@ public class MainClass {
         }
     }
 
-    private static void doWork(String message) {
-        for (char ch : message.toCharArray()) {
-            if (ch == '.') {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    log.error("InterruptedException", e);
-                }
-            }
-        }
-    }
-
     private static void sendMessage(String arg) throws IOException {
         Connection connection = null;
         Channel channel = null;
@@ -82,7 +71,7 @@ public class MainClass {
 
             channel.queueDeclare(QUEUE_NAME, DURABLE, false, false, null);
             channel.basicPublish(
-                    "",
+                    EXCHANGE,
                     QUEUE_NAME,
                     MessageProperties.PERSISTENT_TEXT_PLAIN,
                     getMessage(arg).getBytes(Charset.forName("utf-8"))
@@ -96,6 +85,18 @@ public class MainClass {
 
             if (connection != null) {
                 connection.close();
+            }
+        }
+    }
+
+    private static void doWork(String message) {
+        for (char ch : message.toCharArray()) {
+            if (ch == '.') {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    log.error("InterruptedException", e);
+                }
             }
         }
     }

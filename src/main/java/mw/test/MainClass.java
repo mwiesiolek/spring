@@ -7,64 +7,67 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.MessageProperties;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 
 @Slf4j
 public class MainClass {
-    private final static String QUEUE_NAME = "hello";
+    private final static String QUEUE_NAME = "message-queue";
+    public static final boolean DURABLE = true;
 
     public static void main(String[] args) throws IOException {
 
-        for (String arg : args) {
+/*        for (String arg : args) {
             sendMessage(arg);
-        }
+        }*/
 
-       //  receiveMessage();
+          receiveMessage();
     }
 
     private static void receiveMessage() throws IOException {
-        Connection connection = null;
-        Channel channel = null;
+        Connection connection;
+        final Channel channel;
         try {
             ConnectionFactory factory = new ConnectionFactory();
             factory.setHost("localhost");
             connection = factory.newConnection();
             channel = connection.createChannel();
+            channel.basicQos(1);
 
-            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+            channel.queueDeclare(QUEUE_NAME, DURABLE, false, false, null);
             Consumer consumer = new DefaultConsumer(channel) {
                 @Override
                 public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
                     String message = new String(body, "utf-8");
                     log.info("Message received: {}", message);
 
-                    for (char ch : message.toCharArray()) {
-                        if (ch == '.') {
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                log.error("InterruptedException", e);
-                            }
-                        }
+                    try{
+                        doWork(message);
+                    } finally {
+                        channel.basicAck(envelope.getDeliveryTag(), false);
                     }
                 }
             };
 
-            channel.basicConsume(QUEUE_NAME, true, consumer);
+            channel.basicConsume(QUEUE_NAME, false, consumer);
 
         } finally {
             log.info("Started");
-/*            if (channel != null) {
-                channel.close();
-            }
+        }
+    }
 
-            if (connection != null) {
-                connection.close();
-            }*/
+    private static void doWork(String message) {
+        for (char ch : message.toCharArray()) {
+            if (ch == '.') {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    log.error("InterruptedException", e);
+                }
+            }
         }
     }
 
@@ -77,8 +80,13 @@ public class MainClass {
             connection = factory.newConnection();
             channel = connection.createChannel();
 
-            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
-            channel.basicPublish("", QUEUE_NAME, null, getMessage(arg).getBytes(Charset.forName("utf-8")));
+            channel.queueDeclare(QUEUE_NAME, DURABLE, false, false, null);
+            channel.basicPublish(
+                    "",
+                    QUEUE_NAME,
+                    MessageProperties.PERSISTENT_TEXT_PLAIN,
+                    getMessage(arg).getBytes(Charset.forName("utf-8"))
+            );
 
             log.info("Done");
         } finally {

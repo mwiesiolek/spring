@@ -1,19 +1,30 @@
 group 'mw.test'
-version '1.0-SNAPSHOT'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.8.RELEASE")
+    }
+}
 
 apply plugin: 'java'
-
-sourceCompatibility = 1.8
+apply plugin: 'idea'
+apply plugin: 'org.springframework.boot'
 
 repositories {
     mavenCentral()
 }
 
+sourceCompatibility = 1.8
+
 dependencies {
     compile (
-            'org.springframework:spring-core:5.0.1.RELEASE',
-            'com.rabbitmq:amqp-client:2.3.1',
-            'ch.qos.logback:logback-classic:0.9.26'
+            'org.springframework.boot:spring-boot-starter-web',
+            'org.springframework.boot:spring-boot-starter-thymeleaf',
+            'org.springframework.boot:spring-boot-devtools',
+            'com.rabbitmq:amqp-client:2.3.1'
 
     )
     compileOnly ('org.projectlombok:lombok:1.16.18')

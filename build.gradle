@@ -24,6 +24,7 @@ dependencies {
             'org.springframework.boot:spring-boot-starter-web',
             'org.springframework.boot:spring-boot-starter-thymeleaf',
             'org.springframework.boot:spring-boot-devtools',
+            'org.springframework.statemachine:spring-statemachine-core:1.2.7.RELEASE',
             'com.rabbitmq:amqp-client:2.3.1'
 
     )

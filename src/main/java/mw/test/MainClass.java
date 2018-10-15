@@ -21,7 +21,8 @@ public class MainClass {
 
     public static void main(String[] args) throws IOException {
 
-/*        for (String arg : args) {
+/*        String[] test = new String[] {"test1", "test2"};
+        for (String arg : test) {
             sendMessage(arg);
         }*/
 
@@ -38,6 +39,8 @@ public class MainClass {
             channel = connection.createChannel();
             channel.basicQos(1);
 
+            channel.exchangeDeclare(EXCHANGE, "fanout");
+            channel.queueBind(QUEUE_NAME, EXCHANGE, "");
             channel.queueDeclare(QUEUE_NAME, DURABLE, false, false, null);
             Consumer consumer = new DefaultConsumer(channel) {
                 @Override
@@ -69,6 +72,7 @@ public class MainClass {
             connection = factory.newConnection();
             channel = connection.createChannel();
 
+            channel.exchangeDeclare(EXCHANGE, "fanout");
             channel.queueDeclare(QUEUE_NAME, DURABLE, false, false, null);
             channel.basicPublish(
                     EXCHANGE,
